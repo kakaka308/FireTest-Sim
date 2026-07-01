@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Operator {
+  userid   String @db.VarChar(50)
+  username String @db.VarChar(50)
+  pwd      String @db.VarChar(50)
+  usertype String @db.VarChar(20)
+
+  id Int @id @default(autoincrement())
+
+  @@map("operators")
+}
+
+model Apparatus {
+  id           Int     @id @default(autoincrement())
+  apparatusid  Int     @unique
+  innernumber  String  @db.VarChar(50)
+  apparatusname String @db.VarChar(100)
+  checkdatef   DateTime
+  checkdatet   DateTime
+  pidport      String  @db.VarChar(20)
+  powerport    String  @db.VarChar(20)
+  constpower   Int?
+
+  @@map("apparatus")
+}
+
+model ProductMaster {
+  productid   String  @id @db.VarChar(50)
+  productname String  @db.VarChar(200)
+  specific    String  @db.VarChar(200)
+  diameter    Float
+  height      Float
+  flag        String? @db.VarChar(50)
+
+  tests TestMaster[]
+
+  @@map("productmaster")
+}
+
+model TestMaster {
+  id               Int     @id @default(autoincrement())
+  productid        String  @db.VarChar(50)
+  testid           String  @db.VarChar(50)
+  testdate         DateTime
+  ambtemp          Float
+  ambhumi          Float
+  according        String  @default("ISO 11820:2022") @db.VarChar(50)
+  operator         String  @db.VarChar(50)
+  apparatusid      String  @db.VarChar(50)
+  apparatusname    String  @db.VarChar(100)
+  apparatuschkdate DateTime
+  rptno            String  @db.VarChar(50)
+
+  // 质量数据
+  preweight    Float @default(0)
+  postweight   Float @default(0)
+  lostweight   Float @default(0)
+  lostweightPer Float @default(0) @map("lostweight_per")
+
+  // 试验过程
+  totaltesttime  Int     @default(0)
+  constpower     Int     @default(0)
+  phenocode      String  @default("") @db.VarChar(200)
+  flametime      Int     @default(0)
+  flameduration  Int     @default(0)
+
+  // 各通道温度最大值
+  maxtf1      Float @default(0)
+  maxtf2      Float @default(0)
+  maxts       Float @default(0)
+  maxtc       Float @default(0)
+  maxtf1Time  Int   @default(0) @map("maxtf1_time")
+  maxtf2Time  Int   @default(0) @map("maxtf2_time")
+  maxtsTime   Int   @default(0) @map("maxts_time")
+  maxtcTime   Int   @default(0) @map("maxtc_time")
+
+  // 各通道温度最终值
+  finaltf1     Float @default(0)
+  finaltf2     Float @default(0)
+  finalts      Float @default(0)
+  finaltc      Float @default(0)
+  finaltf1Time Int   @default(0) @map("finaltf1_time")
+  finaltf2Time Int   @default(0) @map("finaltf2_time")
+  finaltsTime  Int   @default(0) @map("finalts_time")
+  finaltcTime  Int   @default(0) @map("finaltc_time")
+
+  // 温升
+  deltatf1 Float @default(0)
+  deltatf2 Float @default(0)
+  deltatf  Float @default(0)
+  deltats  Float @default(0)
+  deltatc  Float @default(0)
+
+  memo String? @db.VarChar(500)
+  flag String? @db.VarChar(20)
+
+  product ProductMaster @relation(fields: [productid], references: [productid])
+
+  @@unique([productid, testid])
+  @@index([testdate])
+  @@index([operator])
+  @@index([testdate, productid])
+  @@map("testmaster")
+}
+
+model Sensor {
+  sensorid    Int     @id
+  sensorname  String  @db.VarChar(50)
+  dispname    String  @db.VarChar(50)
+  sensorgroup String  @db.VarChar(20)
+  unit        String  @db.VarChar(10)
+  discription String  @db.VarChar(100)
+  flag        String  @db.VarChar(20)
+  signalzero  Float   @default(0)
+  signalspan  Float   @default(0)
+  outputzero  Float   @default(0)
+  outputspan  Float   @default(1000)
+  outputvalue Float   @default(0)
+  inputvalue  Float   @default(0)
+  signaltype  Int     @default(4)
+
+  @@map("sensors")
+}
+
+model CalibrationRecord {
+  id                 Int     @id @default(autoincrement())
+  guid               String  @unique @db.VarChar(36)
+  calibrationDate    String  @db.VarChar(30)
+  calibrationType    String  @db.VarChar(20)
+  apparatusId        Int
+  operator           String  @db.VarChar(50)
+  temperatureData    String  @db.Text
+  uniformityResult   Float?
+  maxDeviation       Float?
+  averageTemperature Float?
+  passedCriteria     Int     @default(0)
+  remarks            String  @default("") @db.VarChar(500)
+  createdAt          String  @db.VarChar(30)
+
+  // 炉壁9测温点
+  tempA1 Float? @map("TempA1")
+  tempA2 Float? @map("TempA2")
+  tempA3 Float? @map("TempA3")
+  tempB1 Float? @map("TempB1")
+  tempB2 Float? @map("TempB2")
+  tempB3 Float? @map("TempB3")
+  tempC1 Float? @map("TempC1")
+  tempC2 Float? @map("TempC2")
+  tempC3 Float? @map("TempC3")
+
+  // 计算结果
+  tAvg       Float? @map("TAvg")
+  tAvgAxis1  Float? @map("TAvgAxis1")
+  tAvgAxis2  Float? @map("TAvgAxis2")
+  tAvgAxis3  Float? @map("TAvgAxis3")
+  tAvgLevela Float? @map("TAvgLevela")
+  tAvgLevelb Float? @map("TAvgLevelb")
+  tAvgLevelc Float? @map("TAvgLevelc")
+  tDevAxis1  Float? @map("TDevAxis1")
+  tDevAxis2  Float? @map("TDevAxis2")
+  tDevAxis3  Float? @map("TDevAxis3")
+  tDevLevela Float? @map("TDevLevela")
+  tDevLevelb Float? @map("TDevLevelb")
+  tDevLevelc Float? @map("TDevLevelc")
+  tAvgDevAxis  Float? @map("TAvgDevAxis")
+  tAvgDevLevel Float? @map("TAvgDevLevel")
+
+  centerTempData String? @db.Text
+  memo           String? @db.VarChar(500)
+
+  @@index([calibrationDate])
+  @@index([operator])
+  @@map("CalibrationRecords")
+}
+
+model TemperatureData {
+  id        Int      @id @default(autoincrement())
+  productid String   @db.VarChar(50)
+  testid    String   @db.VarChar(50)
+  timestamp Int      // 秒
+  temp1     Float    // 炉温1
+  temp2     Float    // 炉温2
+  tempSurface Float  @map("tempsurface") // 表面温
+  tempCenter  Float  @map("tempcenter")  // 中心温
+  tempCal     Float  @map("tempcal")     // 校准温
+
+  @@index([productid, testid])
+  @@index([productid, testid, timestamp])
+  @@map("temperature_data")
+}
